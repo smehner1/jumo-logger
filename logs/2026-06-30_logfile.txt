@@ -1,0 +1,4 @@
+2026-06-30 11:29:06 [INFO] test: Logging-Setup OK
+2026-06-30 11:31:37 [ERROR] pymodbus.logging: Connection to (223.223.223.1, 502) failed: timed out
+2026-06-30 11:31:37 [ERROR] poller: Verbindungsfehler: Konnte nicht zu 223.223.223.1:502 verbinden
+2026-06-30 11:31:37 [INFO] poller: Polling beendet.

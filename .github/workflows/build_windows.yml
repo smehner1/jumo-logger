@@ -1,0 +1,37 @@
+name: Build Windows EXE
+
+on:
+  # Manuell aus dem GitHub-UI auslösbar (Actions → "Build Windows EXE" → Run workflow)
+  workflow_dispatch:
+  # Automatisch bei jedem Push auf main
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Code auschecken
+        uses: actions/checkout@v4
+
+      - name: Python 3.13 einrichten
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Abhaengigkeiten installieren
+        run: pip install pymodbus>=3.13 openpyxl>=3.1 "matplotlib>=3.9" pyinstaller
+
+      - name: EXE bauen
+        run: pyinstaller jumo_logger.spec
+
+      - name: EXE als Artifact hochladen
+        uses: actions/upload-artifact@v4
+        with:
+          name: JumoLogger-Windows
+          path: dist\JumoLogger.exe
+          if-no-files-found: error
+          # Artifact 90 Tage aufbewahren (GitHub-Standard)
+          retention-days: 90
