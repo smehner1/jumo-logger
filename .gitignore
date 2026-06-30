@@ -1,0 +1,20 @@
+# Daten & Nutzereinstellungen
+*.sqlite3
+settings.json
+logs/
+
+# PyInstaller
+build/
+dist/
+__pycache__/
+*.pyc
+
+# Claude
+.claude/
+
+# macOS
+.DS_Store
+
+# Excel-Lock-Dateien
+~$*.xlsx
+~$*.xls

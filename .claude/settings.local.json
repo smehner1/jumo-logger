@@ -1,9 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(pipenv install *)",
-      "Bash(pipenv --venv)",
-      "Bash(pipenv run *)"
-    ]
-  }
-}

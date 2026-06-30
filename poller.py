@@ -8,12 +8,12 @@ Kann als Hintergrund-Thread (PollerThread) oder direkt per CLI gestartet werden:
 import logging
 import signal
 import threading
-from datetime import datetime, timezone
+from datetime import datetime
 
 import config
 import storage
 from logging_setup import setup_logging
-from modbus_helpers import connect, read_float, decode_jumo_error
+from modbus_helpers import connect, read_float, decode_jumo_error, read_device_datetime
 
 logger = logging.getLogger(__name__)
 
@@ -75,9 +75,17 @@ class PollerThread(threading.Thread):
         logger.info("Polling beendet.")
 
     def _poll_once(self, client, conn):
-        # Einen gemeinsamen Zeitstempel fuer alle Messungen dieses Zyklus verwenden,
-        # damit beim Export alle Werte sauber in derselben Zeile landen.
-        ts = datetime.now(timezone.utc).isoformat()
+        # Zeitstempel vom Geraet lesen (falls DEVICE_TIME_BASE_ADDR gesetzt),
+        # sonst PC-Lokalzeit. Kein UTC -- Zeitzone des Geraets / PCs wird direkt verwendet.
+        ts = None
+        if config.DEVICE_TIME_BASE_ADDR is not None:
+            dt = read_device_datetime(client, config.DEVICE_TIME_BASE_ADDR, self.unit_id)
+            if dt is not None:
+                ts = dt.isoformat()
+            else:
+                logger.warning("Geraetezeit nicht lesbar -- Fallback auf PC-Lokalzeit")
+        if ts is None:
+            ts = datetime.now().isoformat()
         readings = {}
 
         for entry in self.messwerte:

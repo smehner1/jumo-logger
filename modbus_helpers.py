@@ -16,6 +16,7 @@ bekommen, muessen die beiden 16-Bit-Worte vertauscht werden.
 
 import struct
 import logging
+from datetime import datetime
 from pymodbus.client import ModbusTcpClient
 
 logger = logging.getLogger(__name__)
@@ -55,6 +56,35 @@ def read_float(client: ModbusTcpClient, address: int, unit_id: int) -> float | N
     raw_bytes = struct.pack(">HH", word_x1, word_x)
     value = struct.unpack(">f", raw_bytes)[0]
     return value
+
+
+def read_device_datetime(client: ModbusTcpClient, address: int, unit_id: int) -> datetime | None:
+    """
+    Liest Datum und Uhrzeit vom Geraet als 6 aufeinanderfolgende Holding Registers:
+      [Jahr, Monat, Tag, Stunde, Minute, Sekunde] jeweils als uint16
+
+    Die Basisadresse (address) muss aus der JUMO Schnittstellenbeschreibung
+    entnommen werden (Kapitel Systemparameter / Datum & Uhrzeit).
+
+    Gibt ein naive datetime-Objekt zurueck (Geraete-Lokalzeit, keine UTC-Konvertierung).
+    Gibt None zurueck bei Lesefehler oder unplausiblen Werten.
+    """
+    try:
+        result = client.read_holding_registers(address, count=6, device_id=unit_id)
+    except Exception as exc:
+        logger.warning("Modbus-Fehler beim Lesen der Geraetezeit (0x%04X): %s", address, exc)
+        return None
+
+    if result.isError():
+        logger.warning("Geraetezeit-Lesefehler (0x%04X): %s", address, result)
+        return None
+
+    year, month, day, hour, minute, second = result.registers
+    try:
+        return datetime(year, month, day, hour, minute, second)
+    except ValueError as exc:
+        logger.warning("Ungueltiger Datums-/Zeitwert vom Geraet (%s): %s", result.registers, exc)
+        return None
 
 
 # JUMO-Fehlercodes bei ungueltigen Float-Messwerten (Kapitel 2.8.2)

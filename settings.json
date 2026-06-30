@@ -1,7 +1,0 @@
-{
-  "modbus_host": "223.223.223.1",
-  "modbus_port": 502,
-  "poll_interval": 23,
-  "export_format": "xlsx",
-  "export_bis_jetzt": true
-}

@@ -21,7 +21,7 @@ MODBUS_PORT = 502            # ist beim AQUIS touch fest auf 502 eingestellt
 MODBUS_UNIT_ID = 255         # Unit-ID ist bei Modbus/TCP am AQUIS touch fest auf 255
 
 # --- Polling ---
-POLL_INTERVAL_SECONDS = 10   # wie oft gepollt wird
+POLL_INTERVAL_SECONDS = 60   # wie oft gepollt wird
 
 # --- Speicherung ---
 DB_PATH = os.path.join(_BASE_DIR, "jumo_data.sqlite3")
@@ -29,6 +29,13 @@ DB_PATH = os.path.join(_BASE_DIR, "jumo_data.sqlite3")
 # --- Logging ---
 LOG_DIR = os.path.join(_BASE_DIR, "logs")   # Unterordner neben der .exe / dem Skript
 LOG_BACKUP_DAYS = 30                         # wie viele Tages-Logfiles aufbewahrt werden
+
+# --- Geraetezeit ---
+# Basisadresse fuer 6 aufeinanderfolgende Holding Registers:
+#   [Jahr, Monat, Tag, Stunde, Minute, Sekunde] als uint16
+# Kapitel "Systemparameter / Datum und Uhrzeit" in der JUMO Schnittstellenbeschreibung.
+# None = Fallback auf PC-Systemzeit (Lokalzeit).
+DEVICE_TIME_BASE_ADDR = 0x14A5  # Kap. 7.2.1: Jahr=14A5, Monat=14A6, Tag=14A7, Std=14A8, Min=14A9, Sek=14AA
 
 # --- Gemessene Werte ---
 # Identifiziert am Geraet:

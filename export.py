@@ -14,7 +14,7 @@ jeweils nur der kompensierte Messwert.
 import argparse
 import csv
 import sys
-from datetime import datetime, timezone
+from datetime import datetime
 from collections import defaultdict
 
 import config
@@ -22,19 +22,11 @@ import storage
 
 
 def parse_datetime_input(text: str) -> datetime:
-    """
-    Parst flexible Datums-/Zeiteingaben vom Nutzer.
-    Interpretiert die Eingabe als lokale Zeit und gibt UTC zurueck.
-    """
+    """Parst flexible Datums-/Zeiteingaben als naive Lokalzeit."""
     text = text.strip()
-    formats = ["%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M", "%Y-%m-%d", "%Y-%m-%dT%H:%M:%S"]
-    for fmt in formats:
+    for fmt in ["%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M", "%Y-%m-%d", "%Y-%m-%dT%H:%M:%S"]:
         try:
-            dt = datetime.strptime(text, fmt)
-            dt_local = dt.astimezone() if dt.tzinfo else dt.replace(
-                tzinfo=datetime.now().astimezone().tzinfo
-            )
-            return dt_local.astimezone(timezone.utc)
+            return datetime.strptime(text, fmt)
         except ValueError:
             continue
     raise ValueError(
@@ -91,14 +83,18 @@ def fetch_pivoted(von_iso: str, bis_iso: str):
     return zeitstempel_sortiert, pivot, eingaenge_sortiert
 
 
+def _split_ts(ts: str) -> tuple[str, str]:
+    dt = datetime.fromisoformat(ts)
+    return dt.strftime("%Y-%m-%d"), dt.strftime("%H:%M:%S")
+
+
 def export_csv(path: str, zeitstempel, pivot, eingaenge) -> None:
     with open(path, "w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
-        writer.writerow(["zeitstempel_utc"] + list(eingaenge))
+        writer.writerow(["datum", "uhrzeit"] + list(eingaenge))
         for ts in zeitstempel:
-            row = [ts]
-            for e in eingaenge:
-                row.append(pivot[ts].get(e))
+            datum, uhrzeit = _split_ts(ts)
+            row = [datum, uhrzeit] + [pivot[ts].get(e) for e in eingaenge]
             writer.writerow(row)
 
 
@@ -109,16 +105,14 @@ def export_xlsx(path: str, zeitstempel, pivot, eingaenge) -> None:
     ws = wb.active
     ws.title = "Messwerte"
 
-    ws.append(["Zeitstempel (UTC)"] + list(eingaenge))
+    ws.append(["Datum", "Uhrzeit"] + list(eingaenge))
 
     for ts in zeitstempel:
-        row = [ts]
-        for e in eingaenge:
-            row.append(pivot[ts].get(e))
-        ws.append(row)
+        datum, uhrzeit = _split_ts(ts)
+        ws.append([datum, uhrzeit] + [pivot[ts].get(e) for e in eingaenge])
 
-    for i, _ in enumerate(["Zeitstempel (UTC)"] + list(eingaenge), start=1):
-        ws.column_dimensions[ws.cell(row=1, column=i).column_letter].width = 22
+    for i in range(1, len(["Datum", "Uhrzeit"] + list(eingaenge)) + 1):
+        ws.column_dimensions[ws.cell(row=1, column=i).column_letter].width = 18
 
     wb.save(path)
 
