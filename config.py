@@ -35,7 +35,7 @@ LOG_BACKUP_DAYS = 30                         # wie viele Tages-Logfiles aufbewah
 #   [Jahr, Monat, Tag, Stunde, Minute, Sekunde] als uint16
 # Kapitel "Systemparameter / Datum und Uhrzeit" in der JUMO Schnittstellenbeschreibung.
 # None = Fallback auf PC-Systemzeit (Lokalzeit).
-DEVICE_TIME_BASE_ADDR = 0x14A5  # Kap. 7.2.1: Jahr=14A5, Monat=14A6, Tag=14A7, Std=14A8, Min=14A9, Sek=14AA
+DEVICE_TIME_BASE_ADDR = None  # None = PC-Lokalzeit verwenden (kein UTC)
 
 # --- Gemessene Werte ---
 # Identifiziert am Geraet:
