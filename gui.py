@@ -17,7 +17,7 @@ from matplotlib.figure import Figure
 import matplotlib.dates as mdates
 
 import config
-import settings as app_settings
+import app_settings
 import storage
 import version
 from logging_setup import setup_logging

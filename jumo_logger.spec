@@ -14,7 +14,7 @@ a = Analysis(
     hiddenimports=[
         # eigene Module
         "logging_setup",
-        "settings",
+        "app_settings",
         "version",
         # tkinter -- auf Windows im Standard-Python enthalten, aber explizit angeben
         "tkinter",
