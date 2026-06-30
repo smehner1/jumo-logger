@@ -14,21 +14,29 @@ jobs:
 
     steps:
       - name: Code auschecken
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Python 3.13 einrichten
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.13"
 
       - name: Abhaengigkeiten installieren
         run: pip install pymodbus>=3.13 openpyxl>=3.1 "matplotlib>=3.9" pyinstaller
 
+      - name: Versionsstempel setzen
+        shell: python
+        run: |
+          from datetime import datetime
+          ts = datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
+          with open("version.py", "w") as f:
+              f.write(f"VERSION = '1.0.0'\nBUILD_TIME = '{ts}'\n")
+
       - name: EXE bauen
         run: pyinstaller jumo_logger.spec
 
       - name: EXE als Artifact hochladen
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: JumoLogger-Windows
           path: dist\JumoLogger.exe

@@ -17,7 +17,9 @@ from matplotlib.figure import Figure
 import matplotlib.dates as mdates
 
 import config
+import settings as app_settings
 import storage
+import version
 from logging_setup import setup_logging
 from poller import PollerThread
 import export as export_module
@@ -29,9 +31,12 @@ PLOT_REFRESH_MS = 10_000
 class JumoLoggerApp(tk.Tk):
     def __init__(self):
         super().__init__()
-        self.title("JUMO AQUIS Logger")
         self.minsize(800, 640)
 
+        build_str = version.BUILD_TIME or datetime.now().strftime("%Y%m%d_%H%M")
+        self.title(f"JUMO AQUIS Logger v{version.VERSION} — Build {build_str}")
+
+        self._cfg = app_settings.load()
         self._poller: PollerThread | None = None
         self._status_queue: queue.Queue = queue.Queue()
 
@@ -60,15 +65,15 @@ class JumoLoggerApp(tk.Tk):
         cfg.pack(fill=tk.X)
 
         ttk.Label(cfg, text="IP-Adresse:").pack(side=tk.LEFT)
-        self._ip_var = tk.StringVar(value=config.MODBUS_HOST)
+        self._ip_var = tk.StringVar(value=self._cfg["modbus_host"])
         ttk.Entry(cfg, textvariable=self._ip_var, width=16).pack(side=tk.LEFT, padx=(4, 12))
 
         ttk.Label(cfg, text="Port:").pack(side=tk.LEFT)
-        self._port_var = tk.StringVar(value=str(config.MODBUS_PORT))
+        self._port_var = tk.StringVar(value=str(self._cfg["modbus_port"]))
         ttk.Entry(cfg, textvariable=self._port_var, width=6).pack(side=tk.LEFT, padx=(4, 12))
 
         ttk.Label(cfg, text="Intervall (s):").pack(side=tk.LEFT)
-        self._interval_var = tk.StringVar(value=str(config.POLL_INTERVAL_SECONDS))
+        self._interval_var = tk.StringVar(value=str(self._cfg["poll_interval"]))
         ttk.Entry(cfg, textvariable=self._interval_var, width=6).pack(side=tk.LEFT, padx=(4, 0))
 
         # Status- und Schaltflächenzeile
@@ -124,7 +129,7 @@ class JumoLoggerApp(tk.Tk):
         ttk.Entry(row, textvariable=self._bis_var, width=18).pack(side=tk.LEFT, padx=(4, 12))
 
         ttk.Label(row, text="Format:").pack(side=tk.LEFT)
-        self._fmt_var = tk.StringVar(value="xlsx")
+        self._fmt_var = tk.StringVar(value=self._cfg["export_format"])
         ttk.Combobox(
             row, textvariable=self._fmt_var, values=["xlsx", "csv"], width=6, state="readonly"
         ).pack(side=tk.LEFT, padx=(4, 0))
@@ -153,6 +158,7 @@ class JumoLoggerApp(tk.Tk):
             status_callback=lambda evt, data: self._status_queue.put((evt, data)),
         )
         self._poller.start()
+        self._save_settings()
         self._start_btn.configure(state=tk.DISABLED)
         self._stop_btn.configure(state=tk.NORMAL)
         self._status_label.configure(text="● Verbinde ...", foreground="orange")
@@ -220,7 +226,7 @@ class JumoLoggerApp(tk.Tk):
                 wert = row["wert_kompensiert"]
                 if wert is None:
                     continue
-                ts = datetime.fromisoformat(row["zeitstempel"])
+                ts = datetime.fromisoformat(row["zeitstempel"]).astimezone()  # UTC → Lokalzeit
                 if eingang not in series:
                     series[eingang] = ([], [])
                 series[eingang][0].append(ts)
@@ -282,7 +288,19 @@ class JumoLoggerApp(tk.Tk):
     # Aufräumen beim Schliessen
     # ------------------------------------------------------------------
 
+    def _save_settings(self):
+        try:
+            app_settings.save({
+                "modbus_host": self._ip_var.get(),
+                "modbus_port": int(self._port_var.get()),
+                "poll_interval": int(self._interval_var.get()),
+                "export_format": self._fmt_var.get(),
+            })
+        except (ValueError, OSError):
+            pass
+
     def on_closing(self):
+        self._save_settings()
         if self._poller:
             self._poller.stop()
             self._poller.join(timeout=5)
