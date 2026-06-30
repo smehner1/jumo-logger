@@ -126,7 +126,13 @@ class JumoLoggerApp(tk.Tk):
 
         ttk.Label(row, text="Bis:").pack(side=tk.LEFT)
         self._bis_var = tk.StringVar(value=datetime.now().strftime("%Y-%m-%d %H:%M"))
-        ttk.Entry(row, textvariable=self._bis_var, width=18).pack(side=tk.LEFT, padx=(4, 12))
+        self._bis_entry = ttk.Entry(row, textvariable=self._bis_var, width=18)
+        self._bis_entry.pack(side=tk.LEFT, padx=(4, 4))
+        self._bis_jetzt_var = tk.BooleanVar(value=self._cfg.get("export_bis_jetzt", True))
+        ttk.Checkbutton(
+            row, text="jetzt", variable=self._bis_jetzt_var,
+            command=self._on_bis_jetzt_toggle,
+        ).pack(side=tk.LEFT, padx=(0, 12))
 
         ttk.Label(row, text="Format:").pack(side=tk.LEFT)
         self._fmt_var = tk.StringVar(value=self._cfg["export_format"])
@@ -135,6 +141,9 @@ class JumoLoggerApp(tk.Tk):
         ).pack(side=tk.LEFT, padx=(4, 0))
 
         ttk.Button(row, text="Exportieren", command=self._run_export).pack(side=tk.RIGHT)
+
+        # Initialzustand herstellen (Feld ggf. deaktivieren + Timer starten)
+        self._on_bis_jetzt_toggle()
 
     # ------------------------------------------------------------------
     # Poller-Steuerung
@@ -162,6 +171,19 @@ class JumoLoggerApp(tk.Tk):
         self._start_btn.configure(state=tk.DISABLED)
         self._stop_btn.configure(state=tk.NORMAL)
         self._status_label.configure(text="● Verbinde ...", foreground="orange")
+
+    def _on_bis_jetzt_toggle(self):
+        if self._bis_jetzt_var.get():
+            self._bis_var.set(datetime.now().strftime("%Y-%m-%d %H:%M"))
+            self._bis_entry.configure(state=tk.DISABLED)
+            self._tick_bis_jetzt()
+        else:
+            self._bis_entry.configure(state=tk.NORMAL)
+
+    def _tick_bis_jetzt(self):
+        if self._bis_jetzt_var.get():
+            self._bis_var.set(datetime.now().strftime("%Y-%m-%d %H:%M"))
+            self.after(60_000, self._tick_bis_jetzt)
 
     def _stop_poller(self):
         if self._poller:
@@ -274,6 +296,8 @@ class JumoLoggerApp(tk.Tk):
             return
 
         try:
+            if self._bis_jetzt_var.get():
+                self._bis_var.set(datetime.now().strftime("%Y-%m-%d %H:%M"))
             export_module.run(
                 von_text=self._von_var.get(),
                 bis_text=self._bis_var.get(),
@@ -295,6 +319,7 @@ class JumoLoggerApp(tk.Tk):
                 "modbus_port": int(self._port_var.get()),
                 "poll_interval": int(self._interval_var.get()),
                 "export_format": self._fmt_var.get(),
+                "export_bis_jetzt": self._bis_jetzt_var.get(),
             })
         except (ValueError, OSError):
             pass
