@@ -56,7 +56,7 @@ def _group_rows_by_cycle(rows, tolerance_seconds=None):
     cycle_ts = None
 
     for row in rows:
-        dt = datetime.fromisoformat(row["zeitstempel"])
+        dt = datetime.fromisoformat(row["zeitstempel"]).replace(tzinfo=None)
         eingang = row["eingang"]
         eingaenge.add(eingang)
 

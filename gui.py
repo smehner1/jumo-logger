@@ -8,7 +8,7 @@ Start:
 import queue
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 
 import matplotlib
 matplotlib.use("TkAgg")
@@ -236,7 +236,7 @@ class JumoLoggerApp(tk.Tk):
 
     def _redraw_plot(self):
         try:
-            now = datetime.now(timezone.utc)
+            now = datetime.now()
             von = (now - timedelta(minutes=LIVE_WINDOW_MINUTES)).isoformat()
             bis = now.isoformat()
 
@@ -248,7 +248,7 @@ class JumoLoggerApp(tk.Tk):
                 wert = row["wert_kompensiert"]
                 if wert is None:
                     continue
-                ts = datetime.fromisoformat(row["zeitstempel"]).astimezone()  # UTC → Lokalzeit
+                ts = datetime.fromisoformat(row["zeitstempel"]).replace(tzinfo=None)
                 if eingang not in series:
                     series[eingang] = ([], [])
                 series[eingang][0].append(ts)
