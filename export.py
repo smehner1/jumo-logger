@@ -47,8 +47,9 @@ def _group_rows_by_cycle(rows, tolerance_seconds=None):
       pivot_dict: {cycle_ts_str: {eingang: wert_kompensiert}}
     """
     if tolerance_seconds is None:
-        # Halb so lang wie das konfigurierte Intervall, mindestens 2 Sekunden.
-        tolerance_seconds = max(config.POLL_INTERVAL_SECONDS / 2, 2)
+        # Fest 2 Sekunden: beide Sensoren eines Zyklus haben denselben Timestamp
+        # (Diff = 0s), der naechste Zyklus liegt mindestens polling_interval entfernt.
+        tolerance_seconds = 2
 
     pivot = defaultdict(dict)
     eingaenge = set()
